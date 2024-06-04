@@ -179,7 +179,7 @@ print_info(green, 'Nocloud', 'value', str(cmd.nocloud))
 print(green(f"{'*'*94:94}\n"))
 
 print(f"{'REGION':8} {'AD':7} {'COMPARTMENT':14} {'VOL_NAME':14}"
-     f"{'VOL_TYPE':13} {'VG_NAME':13} {'VG_BKP':9} {'INSTANCE':14}"
+     f"{'VOL_TYPE':13} {'VG_NAME':13} {'VG_BKP':9} {'POLICY':9} {'INSTANCE':14}"
      f"{'TYPE':7} {'DATE':13} {'AGE':8} {'SIZE_GBS':12}"
      f"{'SOURCE':12} {'STATE':12} {'NAME':14} {'EOL':12}\n")
 
@@ -258,7 +258,12 @@ for region in analyzed_regions:
     #    - print/record result
     # - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # 
     # analyze all boot volumes in the region
+    # 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     for boot_volume_data in all_boot_vols.data:
         
         backup_dates = {}
@@ -266,6 +271,16 @@ for region in analyzed_regions:
 
         resource_compartment = identity_client.get_compartment(boot_volume_data.compartment_id).data
         boot_volume = blk_storage_client.get_boot_volume(boot_volume_data.identifier).data
+
+        # retrieve backup policy
+        volume_backup_policy_asset_assignment=blk_storage_client.get_volume_backup_policy_asset_assignment(boot_volume.id).data
+
+        if volume_backup_policy_asset_assignment:
+            for item in volume_backup_policy_asset_assignment:
+                volume_backup_policy_assignment=blk_storage_client.get_volume_backup_policy_assignment(item.id).data
+                volume_backup_policy=blk_storage_client.get_volume_backup_policy(volume_backup_policy_assignment.policy_id).data
+
+        volume_backup_policy_display_name = volume_backup_policy.display_name if volume_backup_policy_asset_assignment else ' - '
 
         available_boot_backups = list_boot_volume_backups(
                                 config, 
@@ -348,7 +363,8 @@ for region in analyzed_regions:
                 'obj_name': boot_volume_data.display_name, 
                 'obj_type': boot_volume_data.resource_type, 
                 'vg': volume_group_name, 
-                'is_vg_bkp': is_volume_group_backup, 
+                'is_vg_bkp': is_volume_group_backup,
+                'policy': volume_backup_policy_display_name,
                 'instance': attached_instance_name, 
                 'bkp_type': backup_type, 
                 'bkp_created': backup_time_created,
@@ -390,6 +406,7 @@ for region in analyzed_regions:
 
         # else no backup or no 'AVAILABLE' backup
         else:
+
             output_data = {
                 'color': red,
                 'region': region.region_key,
@@ -398,7 +415,8 @@ for region in analyzed_regions:
                 'obj_name': boot_volume_data.display_name, 
                 'obj_type': boot_volume_data.resource_type, 
                 'vg': volume_group_name, 
-                'is_vg_bkp': is_volume_group_backup, 
+                'is_vg_bkp': is_volume_group_backup,
+                'policy': volume_backup_policy_display_name,
                 'instance': attached_instance_name, 
             }
 
@@ -421,7 +439,12 @@ for region in analyzed_regions:
 
             write_to_csv(csv_report, csv_data)
 
-    # analyze all block volumes in the region                    
+    # - - - - - - - - - - - - - - - - - - - - - - - - - -
+    # 
+    # analyze all block volumes in the region
+    # 
+    # - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     for volume_data in all_block_vols.data:
 
         backup_dates = {}
@@ -429,6 +452,14 @@ for region in analyzed_regions:
 
         resource_compartment = identity_client.get_compartment(volume_data.compartment_id).data
         block_volume = blk_storage_client.get_volume(volume_data.identifier).data
+
+        # retrieve backup policy
+        volume_backup_policy_asset_assignment=blk_storage_client.get_volume_backup_policy_asset_assignment(block_volume.id).data
+        if volume_backup_policy_asset_assignment:
+            for item in volume_backup_policy_asset_assignment:
+                volume_backup_policy_assignment=blk_storage_client.get_volume_backup_policy_assignment(item.id).data
+                volume_backup_policy=blk_storage_client.get_volume_backup_policy(volume_backup_policy_assignment.policy_id).data
+        volume_backup_policy_display_name = volume_backup_policy.display_name if volume_backup_policy_asset_assignment else ' - '
 
         available_block_backups = list_volume_backups(
                                     config,
@@ -512,7 +543,8 @@ for region in analyzed_regions:
                 'obj_name': volume_data.display_name, 
                 'obj_type': volume_data.resource_type, 
                 'vg': volume_group_name, 
-                'is_vg_bkp': is_volume_group_backup, 
+                'is_vg_bkp': is_volume_group_backup,
+                'policy': volume_backup_policy_display_name,
                 'instance': attached_instance_name, 
                 'bkp_type': backup_type, 
                 'bkp_created': backup_time_created,
@@ -563,7 +595,8 @@ for region in analyzed_regions:
                 'obj_name': volume_data.display_name, 
                 'obj_type': volume_data.resource_type, 
                 'vg': volume_group_name, 
-                'is_vg_bkp': is_volume_group_backup, 
+                'is_vg_bkp': is_volume_group_backup,
+                'policy': volume_backup_policy_display_name,
                 'instance': attached_instance_name, 
             }
 

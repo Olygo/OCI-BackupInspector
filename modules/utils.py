@@ -142,6 +142,7 @@ def print_error(*args, color=red, level='ERROR'):
 # - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 def print_output(data):
+    print(data)
 
     color = data.get('color')
     region = data.get('region')
@@ -151,6 +152,7 @@ def print_output(data):
     obj_type = data.get('obj_type')
     vg = data.get('vg',' - ')
     is_vg_bkp = data.get('is_vg_bkp',' - ')
+    policy = data.get('volume_backup_policy_display_name',' - ')
     instance = data.get('instance',' - ')
     bkp_type = data.get('bkp_type',' - ')
     bkp_created = data.get('bkp_created',' - ')
@@ -160,7 +162,9 @@ def print_output(data):
     bkp_state = data.get('bkp_state',' - ')
     bkp_name = data.get('bkp_name',' - ')
     bkp_eol = data.get('bkp_eol',' - ')
-    
+
+    print(f'\n ========== {policy} ==========\n')
+    print(f'\n ========== {type(policy)} ==========\n')
     formatted_string = color(
         f'{region:8} '
         f'{region_ad[-4:]:7} '
@@ -169,6 +173,7 @@ def print_output(data):
         f'{obj_type:13} '
         f'{vg[0:10]:13} '
         f'{is_vg_bkp:9} '
+        f'{policy[0:7]:9} '
         f'{instance[0:11]:14} '
         f'{bkp_type[0:4]:7} '
         f'{str(bkp_created)[0:10]:13} '
